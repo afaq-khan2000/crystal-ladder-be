@@ -9,6 +9,7 @@ import { tap } from 'rxjs/operators';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { AuditLog, AuditAction } from '@/entities/audit-log.entity';
+import { User } from '@/entities/user.entity';
 import { Request } from 'express';
 
 /**
@@ -23,7 +24,7 @@ export class AuditInterceptor implements NestInterceptor {
   ) {}
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
-    const request = context.switchToHttp().getRequest<Request>();
+    const request = context.switchToHttp().getRequest<Request & { user?: User }>();
     const { method, url, user, body, params, query } = request;
     const ipAddress = request.ip || request.headers['x-forwarded-for'] || 'unknown';
     const userAgent = request.headers['user-agent'] || 'unknown';
