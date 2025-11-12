@@ -86,21 +86,14 @@ export class MessagesService {
     // Parents can see messages sent to them or announcements/newsletters
     if (userRole === Role.Parent) {
       where.receiverId = userId;
-      // Also include announcements and newsletters
+      // Also include announcements and newsletters (no receiverId filter)
       if (type === MessageType.Announcement || type === MessageType.Newsletter) {
         delete where.receiverId;
       }
     }
 
-    // Therapists and admins can see all messages
-    if ([Role.Therapist, Role.Admin, Role.ContentManager].includes(userRole)) {
-      // Filter by sent or received
-      where.senderId = userId;
-      // Or get received messages
-      const receivedWhere = { ...where };
-      delete receivedWhere.senderId;
-      receivedWhere.receiverId = userId;
-    }
+    // Admins can see all messages (no filter applied to where clause)
+    // If no role is provided or role is Admin, don't filter by userId
 
     const [messages, total] = await this.messageRepository.findAndCount({
       where,
@@ -138,7 +131,7 @@ export class MessagesService {
     if (
       message.receiverId !== userId &&
       message.senderId !== userId &&
-      !['Admin', 'ContentManager'].includes(userRole)
+      userRole !== Role.Admin
     ) {
       throw new HttpException('Unauthorized access', HttpStatus.FORBIDDEN);
     }

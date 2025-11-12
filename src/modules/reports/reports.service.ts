@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import { Report } from '@/entities/report.entity';
 import { CreateReportDto } from './dto/create-report.dto';
 import { UpdateReportDto } from './dto/update-report.dto';
@@ -28,20 +28,20 @@ export class ReportsService {
   /**
    * Create a new report
    * @param createReportDto - Report data
-   * @param therapistId - Therapist user ID
+   * @param adminId - Admin user ID
    * @returns Created report
    */
   async create(
     createReportDto: CreateReportDto,
-    therapistId: number,
+    adminId: number,
   ): Promise<Report> {
-    // Verify therapist exists
-    const therapist = await this.userRepository.findOne({
-      where: { id: therapistId, role: Role.Therapist },
+    // Verify admin exists
+    const admin = await this.userRepository.findOne({
+      where: { id: adminId, role: Role.Admin },
     });
 
-    if (!therapist) {
-      throw new HttpException('Therapist not found', HttpStatus.NOT_FOUND);
+    if (!admin) {
+      throw new HttpException('Admin not found', HttpStatus.NOT_FOUND);
     }
 
     // Verify child exists
@@ -55,7 +55,7 @@ export class ReportsService {
 
     const report = this.reportRepository.create({
       ...createReportDto,
-      therapistId,
+      therapistId: adminId, // Using therapistId field but storing admin ID
     });
 
     return await this.reportRepository.save(report);
@@ -81,10 +81,6 @@ export class ReportsService {
   ) {
     const where: any = {};
 
-    if (childId) {
-      where.childId = childId;
-    }
-
     if (therapistId) {
       where.therapistId = therapistId;
     }
@@ -96,13 +92,29 @@ export class ReportsService {
         where: { parentId: userId },
       });
       const childIds = children.map((child) => child.id);
-      where.childId = childIds.length > 0 ? childIds : -1; // -1 ensures no results
+      
+      if (childId) {
+        // If a specific childId is provided, verify it belongs to the parent
+        if (!childIds.includes(childId)) {
+          // Return empty result if child doesn't belong to parent
+          return Helper.paginateResponse({ data: [[], 0], page, limit });
+        }
+        where.childId = childId;
+      } else {
+        // Use In operator for multiple child IDs
+        if (childIds.length > 0) {
+          where.childId = In(childIds);
+        } else {
+          // No children, return empty result
+          return Helper.paginateResponse({ data: [[], 0], page, limit });
+        }
+      }
+    } else if (childId) {
+      // For non-parents, use the provided childId
+      where.childId = childId;
     }
 
-    // Therapists can only see their own reports
-    if (userRole === Role.Therapist) {
-      where.therapistId = userId;
-    }
+    // Admins can see all reports (no filter applied)
 
     const [reports, total] = await this.reportRepository.findAndCount({
       where,
@@ -147,9 +159,7 @@ export class ReportsService {
       }
     }
 
-    if (userRole === Role.Therapist && report.therapistId !== userId) {
-      throw new HttpException('Unauthorized access', HttpStatus.FORBIDDEN);
-    }
+    // Admins can access all reports
 
     return report;
   }
@@ -170,8 +180,8 @@ export class ReportsService {
   ): Promise<Report> {
     const report = await this.findOne(id, userId, userRole);
 
-    // Only therapist who created the report or admin can update
-    if (userRole === Role.Therapist && report.therapistId !== userId) {
+    // Only admin can update reports
+    if (userRole !== Role.Admin) {
       throw new HttpException('Unauthorized', HttpStatus.FORBIDDEN);
     }
 
