@@ -10,6 +10,8 @@ import {
   UseGuards,
   Request,
   Put,
+  HttpException,
+  HttpStatus,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -98,6 +100,19 @@ export class ParentController {
     @Request() req: any,
   ) {
     return this.parentService.updateChild(parseInt(id), updateChildDto, req.user.id);
+  }
+
+  @Delete('children/:id')
+  @ApiOperation({ summary: 'Delete a child' })
+  @ApiResponse({ status: 200, description: 'Child deleted successfully' })
+  @ApiResponse({ status: 404, description: 'Child not found' })
+  @ApiResponse({ status: 403, description: 'Unauthorized access' })
+  async deleteChild(@Param('id') id: string, @Request() req: any) {
+    if (!req.user || !req.user.id) {
+      throw new HttpException('User not authenticated', HttpStatus.UNAUTHORIZED);
+    }
+    await this.parentService.deleteChild(parseInt(id), req.user.id);
+    return { message: 'Child deleted successfully' };
   }
 
   // ==================== Appointments Management ====================

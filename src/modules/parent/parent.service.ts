@@ -187,6 +187,10 @@ export class ParentService {
     return this.childrenService.update(id, updateChildDto, parentId, Role.Parent);
   }
 
+  async deleteChild(id: number, parentId: number) {
+    return this.childrenService.remove(id, parentId, Role.Parent);
+  }
+
   // ==================== Appointments Management ====================
   async getAppointments(
     parentId: number,
