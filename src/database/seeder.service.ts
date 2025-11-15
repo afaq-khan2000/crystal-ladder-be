@@ -7,7 +7,7 @@ import { Service } from '@/entities/service.entity';
 import { Appointment, AppointmentStatus } from '@/entities/appointment.entity';
 import { Report, ReportType } from '@/entities/report.entity';
 import { Message, MessageType } from '@/entities/message.entity';
-import { Event, EventType } from '@/entities/event.entity';
+import { Event } from '@/entities/event.entity';
 import { AuditLog, AuditAction } from '@/entities/audit-log.entity';
 import { Role } from '@/common/enums/roles.enum';
 import { Helper } from '@/utils';
@@ -483,7 +483,7 @@ export class SeederService {
       {
         title: 'Parent Workshop: Understanding Autism',
         description: 'Join us for an informative workshop where parents can learn about autism spectrum disorder, effective strategies, and available resources.',
-        type: EventType.Workshop,
+        type: 'workshop',
         eventDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // 2 weeks from now
         eventEndDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000 + 2 * 60 * 60 * 1000), // 2 hours later
         location: 'Crystal Ladder Learning Centre - Main Hall',
@@ -494,7 +494,7 @@ export class SeederService {
       {
         title: 'Family Fun Day',
         description: 'A day of fun activities for the whole family! Games, food, and entertainment for children and parents.',
-        type: EventType.Activity,
+        type: 'activity',
         eventDate: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000), // 3 weeks from now
         eventEndDate: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000 + 4 * 60 * 60 * 1000), // 4 hours later
         location: 'Community Park',
@@ -505,7 +505,7 @@ export class SeederService {
       {
         title: 'Important Announcement: New Services Available',
         description: 'We are excited to announce new therapy services including music therapy and art therapy. Contact us for more information.',
-        type: EventType.Announcement,
+        type: 'announcement',
         eventDate: new Date(),
         eventEndDate: null,
         location: null,
@@ -516,7 +516,7 @@ export class SeederService {
       {
         title: 'Monthly Parent Support Group Meeting',
         description: 'Monthly meeting for parents to share experiences, get support, and learn from each other.',
-        type: EventType.Meeting,
+        type: 'meeting',
         eventDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 1 week from now
         eventEndDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000 + 90 * 60 * 1000), // 90 minutes later
         location: 'Crystal Ladder Learning Centre - Conference Room',
@@ -527,7 +527,7 @@ export class SeederService {
       {
         title: 'Summer Camp Registration Open',
         description: 'Registration for our summer camp program is now open! Limited spots available. Register early to secure your child\'s place.',
-        type: EventType.Announcement,
+        type: 'announcement',
         eventDate: new Date(),
         eventEndDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
         location: null,

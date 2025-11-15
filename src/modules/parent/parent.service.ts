@@ -106,28 +106,34 @@ export class ParentService {
       take: limit,
     });
 
-    return appointments.map((appointment) => ({
-      id: appointment.id,
-      appointmentDate: appointment.appointmentDate,
-      status: appointment.status,
-      child: {
-        id: appointment.child.id,
-        firstName: appointment.child.firstName,
-        lastName: appointment.child.lastName,
-      },
-      service: {
-        id: appointment.service.id,
-        name: appointment.service.name,
-      },
-      therapist: appointment.therapist
-        ? {
-            id: appointment.therapist.id,
-            firstName: appointment.therapist.firstName,
-            lastName: appointment.therapist.lastName,
-          }
-        : null,
-      notes: appointment.notes,
-    }));
+    return appointments
+      .filter((appointment) => appointment.child && appointment.service)
+      .map((appointment) => ({
+        id: appointment.id,
+        appointmentDate: appointment.appointmentDate,
+        status: appointment.status,
+        child: appointment.child
+          ? {
+              id: appointment.child.id,
+              firstName: appointment.child.firstName,
+              lastName: appointment.child.lastName,
+            }
+          : null,
+        service: appointment.service
+          ? {
+              id: appointment.service.id,
+              name: appointment.service.name,
+            }
+          : null,
+        therapist: appointment.therapist
+          ? {
+              id: appointment.therapist.id,
+              firstName: appointment.therapist.firstName,
+              lastName: appointment.therapist.lastName,
+            }
+          : null,
+        notes: appointment.notes,
+      }));
   }
 
   async getRecentReports(parentId: number, limit: number = 5) {

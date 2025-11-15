@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { MulterModule } from '@nestjs/platform-express';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AdminService } from './admin.service';
 import { AdminController } from './admin.controller';
@@ -11,9 +12,11 @@ import { ReportsModule } from '../reports/reports.module';
 import { DashboardModule } from '../dashboard/dashboard.module';
 import { AuditLogsModule } from '../audit-logs/audit-logs.module';
 import { MessagesModule } from '../messages/messages.module';
+import { FaqsModule } from '../faqs/faqs.module';
 
 @Module({
   imports: [
+    MulterModule.register({}),
     UserModule,
     ChildrenModule,
     ServicesModule,
@@ -23,6 +26,7 @@ import { MessagesModule } from '../messages/messages.module';
     DashboardModule,
     AuditLogsModule,
     MessagesModule,
+    FaqsModule,
   ],
   controllers: [AdminController],
   providers: [AdminService],

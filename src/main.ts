@@ -1,18 +1,32 @@
 import { NestFactory } from '@nestjs/core';
 import { HttpStatus, Logger, ValidationPipe } from '@nestjs/common';
+import { NestExpressApplication } from '@nestjs/platform-express';
+import { json, urlencoded } from 'express';
 import { AppModule } from './app.module';
 import { setupSwagger } from './swagger-setup';
 import { LoggerService } from './shared/logger/logger.service';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { isDev, port, globalPrefix } from './common/constants/env';
+import { ensureUploadDirs, UPLOAD_ROOT } from './common/config/upload.config';
 
 declare const module: any;
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, {
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     bufferLogs: true,
     snapshot: true,
   });
+
+  app.use(json({ limit: '20mb' }));
+  app.use(
+    urlencoded({
+      limit: '20mb',
+      extended: true,
+    }),
+  );
+
+  ensureUploadDirs();
+  app.useStaticAssets(UPLOAD_ROOT, { prefix: '/uploads/' });
 
   app.enableCors({ origin: '*', credentials: true });
 

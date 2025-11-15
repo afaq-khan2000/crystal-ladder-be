@@ -246,35 +246,46 @@ export class DashboardService {
       take: limit,
     });
 
-    return appointments.map((appointment) => ({
-      id: appointment.id,
-      appointmentDate: appointment.appointmentDate,
-      status: appointment.status,
-      parent: {
-        id: appointment.parent.id,
-        firstName: appointment.parent.firstName,
-        lastName: appointment.parent.lastName,
-        email: appointment.parent.email,
-      },
-      child: {
-        id: appointment.child.id,
-        firstName: appointment.child.firstName,
-        lastName: appointment.child.lastName,
-      },
-      service: {
-        id: appointment.service.id,
-        name: appointment.service.name,
-      },
-      therapist: appointment.therapist
-        ? {
-            id: appointment.therapist.id,
-            firstName: appointment.therapist.firstName,
-            lastName: appointment.therapist.lastName,
-          }
-        : null,
-      notes: appointment.notes,
-      createdAt: appointment.createdAt,
-    }));
+    return appointments
+      .filter(
+        (appointment) =>
+          appointment.parent && appointment.child && appointment.service,
+      )
+      .map((appointment) => ({
+        id: appointment.id,
+        appointmentDate: appointment.appointmentDate,
+        status: appointment.status,
+        parent: appointment.parent
+          ? {
+              id: appointment.parent.id,
+              firstName: appointment.parent.firstName,
+              lastName: appointment.parent.lastName,
+              email: appointment.parent.email,
+            }
+          : null,
+        child: appointment.child
+          ? {
+              id: appointment.child.id,
+              firstName: appointment.child.firstName,
+              lastName: appointment.child.lastName,
+            }
+          : null,
+        service: appointment.service
+          ? {
+              id: appointment.service.id,
+              name: appointment.service.name,
+            }
+          : null,
+        therapist: appointment.therapist
+          ? {
+              id: appointment.therapist.id,
+              firstName: appointment.therapist.firstName,
+              lastName: appointment.therapist.lastName,
+            }
+          : null,
+        notes: appointment.notes,
+        createdAt: appointment.createdAt,
+      }));
   }
 
   /**

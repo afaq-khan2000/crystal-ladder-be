@@ -95,12 +95,15 @@ export class AppointmentsService {
       child = await this.childRepository.save(child);
     }
 
+    const defaultTherapistId = await this.getDefaultAdminId();
+
     // Create appointment
     const appointment = this.appointmentRepository.create({
       appointmentDate: new Date(bookAppointmentDto.appointmentDate),
       serviceId: bookAppointmentDto.serviceId,
       parentId: parent.id,
       childId: child.id,
+      therapistId: defaultTherapistId ?? null,
       status: AppointmentStatus.Pending,
       notes: `Preferred Location: ${bookAppointmentDto.preferredLocation}. Urgency: ${bookAppointmentDto.urgencyLevel}. ${bookAppointmentDto.additionalNotes || ''}`,
     });
@@ -183,8 +186,12 @@ export class AppointmentsService {
       }
     }
 
+    const therapistId =
+      createAppointmentDto.therapistId ?? (await this.getDefaultAdminId());
+
     const appointment = this.appointmentRepository.create({
       ...createAppointmentDto,
+      therapistId: therapistId ?? null,
       parentId,
       status: AppointmentStatus.Pending,
     });
@@ -492,6 +499,15 @@ export class AppointmentsService {
     }
 
     await this.appointmentRepository.softRemove(appointment);
+  }
+
+  private async getDefaultAdminId(): Promise<number | null> {
+    const admin = await this.userRepository.findOne({
+      where: { role: Role.Admin, isApproved: true },
+      order: { createdAt: 'ASC' },
+    });
+
+    return admin?.id ?? null;
   }
 }
 

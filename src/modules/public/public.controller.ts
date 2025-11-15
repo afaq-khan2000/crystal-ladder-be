@@ -6,7 +6,6 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 import { PublicService } from './public.service';
-import { EventType } from '@/entities/event.entity';
 import { BookAppointmentDto } from '../appointments/dto/book-appointment.dto';
 
 @Controller('public')
@@ -22,18 +21,26 @@ export class PublicController {
   @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
   @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
   @ApiQuery({ name: 'isActive', required: false, type: Boolean })
+  @ApiQuery({ name: 'all', required: false, type: Boolean })
   @ApiResponse({ status: 200, description: 'List of services' })
   getServices(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
     @Query('isActive') isActive?: string,
+    @Query('all') all?: string,
   ) {
     const pageNum = parseInt(page) || 1;
     const limitNum = parseInt(limit) || 10;
     const isActiveFilter =
       isActive === 'true' ? true : isActive === 'false' ? false : undefined;
+    const fetchAll = all === 'true';
 
-    return this.publicService.getServices(pageNum, limitNum, isActiveFilter);
+    return this.publicService.getServices(
+      pageNum,
+      limitNum,
+      isActiveFilter,
+      fetchAll,
+    );
   }
 
   /**
@@ -58,24 +65,32 @@ export class PublicController {
   @ApiQuery({
     name: 'type',
     required: false,
-    enum: EventType,
+    type: String,
+  })
+  @ApiQuery({
+    name: 'all',
+    required: false,
+    type: Boolean,
+    description: 'When true, include unpublished events',
   })
   @ApiResponse({ status: 200, description: 'List of events' })
   getEvents(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
     @Query('isFeatured') isFeatured?: string,
-    @Query('type') type?: EventType,
+    @Query('type') type?: string,
+    @Query('all') all?: string,
   ) {
     const pageNum = parseInt(page) || 1;
     const limitNum = parseInt(limit) || 10;
     const isFeaturedFilter =
       isFeatured === 'true' ? true : isFeatured === 'false' ? false : undefined;
+    const includeAll = all === 'true';
 
     return this.publicService.getEvents(
       pageNum,
       limitNum,
-      true, // Only published events
+      includeAll,
       isFeaturedFilter,
       type,
     );
@@ -90,6 +105,42 @@ export class PublicController {
   @ApiResponse({ status: 404, description: 'Event not found' })
   getEvent(@Param('id') id: string) {
     return this.publicService.getEvent(parseInt(id));
+  }
+
+  /**
+   * Get published FAQs (public)
+   */
+  @Get('faqs')
+  @ApiOperation({ summary: 'Get published FAQs (public)' })
+  @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
+  @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
+  @ApiQuery({
+    name: 'all',
+    required: false,
+    type: Boolean,
+    description: 'When true, return all FAQs (ignores published filter)',
+  })
+  @ApiResponse({ status: 200, description: 'List of FAQs' })
+  getFaqs(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('all') all?: string,
+  ) {
+    const pageNum = parseInt(page) || 1;
+    const limitNum = parseInt(limit) || 10;
+    const fetchAll = all === 'true';
+    return this.publicService.getFaqs(pageNum, limitNum, fetchAll);
+  }
+
+  /**
+   * Get a published FAQ by ID (public)
+   */
+  @Get('faqs/:id')
+  @ApiOperation({ summary: 'Get a published FAQ by ID (public)' })
+  @ApiResponse({ status: 200, description: 'FAQ details' })
+  @ApiResponse({ status: 404, description: 'FAQ not found' })
+  getFaq(@Param('id') id: string) {
+    return this.publicService.getFaq(parseInt(id));
   }
 
   /**

@@ -9,6 +9,8 @@ import {
   Query,
   UseGuards,
   Request,
+  UseInterceptors,
+  UploadedFiles,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -16,6 +18,7 @@ import {
   ApiResponse,
   ApiBearerAuth,
   ApiQuery,
+  ApiConsumes,
 } from '@nestjs/swagger';
 import { AdminService } from './admin.service';
 import { JwtAuthGuard } from '../auth/guards/local-auth.guard';
@@ -37,11 +40,15 @@ import { ApproveAppointmentDto } from '../appointments/dto/approve-appointment.d
 import { RejectAppointmentDto } from '../appointments/dto/reject-appointment.dto';
 import { UpdateAppointmentDto } from '../appointments/dto/update-appointment.dto';
 import { AppointmentStatus } from '@/entities/appointment.entity';
-import { EventType } from '@/entities/event.entity';
 import { AuditAction } from '@/entities/audit-log.entity';
 import { CreateMessageDto } from '../messages/dto/create-message.dto';
 import { UpdateMessageDto } from '../messages/dto/update-message.dto';
 import { MessageType } from '@/entities/message.entity';
+import { CreateFaqDto } from '../faqs/dto/create-faq.dto';
+import { UpdateFaqDto } from '../faqs/dto/update-faq.dto';
+import { FileFieldsInterceptor } from '@nestjs/platform-express';
+import { eventImagesMulterOptions } from '@/common/config/upload.config';
+import { Express } from 'express';
 
 @Controller('admin')
 @ApiTags('admin')
@@ -254,7 +261,7 @@ export class AdminController {
   @ApiQuery({
     name: 'type',
     required: false,
-    enum: EventType,
+    type: String,
   })
   @ApiResponse({ status: 200, description: 'List of events' })
   getEvents(
@@ -262,7 +269,7 @@ export class AdminController {
     @Query('limit') limit?: string,
     @Query('isPublished') isPublished?: string,
     @Query('isFeatured') isFeatured?: string,
-    @Query('type') type?: EventType,
+    @Query('type') type?: string,
   ) {
     const pageNum = parseInt(page) || 1;
     const limitNum = parseInt(limit) || 10;
@@ -288,18 +295,61 @@ export class AdminController {
   }
 
   @Post('events')
+  @UseInterceptors(
+    FileFieldsInterceptor(
+      [
+        { name: 'images', maxCount: 5 },
+        { name: 'image', maxCount: 1 },
+      ],
+      eventImagesMulterOptions,
+    ),
+  )
+  @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: 'Create a new event' })
   @ApiResponse({ status: 201, description: 'Event created successfully' })
-  createEvent(@Body() createEventDto: CreateEventDto) {
-    return this.adminService.createEvent(createEventDto);
+  createEvent(
+    @Body() createEventDto: CreateEventDto,
+    @UploadedFiles()
+    files?: {
+      images?: Express.Multer.File[];
+      image?: Express.Multer.File[];
+    },
+  ) {
+    const uploadFiles = [
+      ...(files?.images ?? []),
+      ...(files?.image ?? []),
+    ];
+    return this.adminService.createEvent(createEventDto, uploadFiles);
   }
 
   @Patch('events/:id')
+  @UseInterceptors(
+    FileFieldsInterceptor(
+      [
+        { name: 'images', maxCount: 5 },
+        { name: 'image', maxCount: 1 },
+      ],
+      eventImagesMulterOptions,
+    ),
+  )
+  @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: 'Update an event' })
   @ApiResponse({ status: 200, description: 'Event updated successfully' })
   @ApiResponse({ status: 404, description: 'Event not found' })
-  updateEvent(@Param('id') id: string, @Body() updateEventDto: UpdateEventDto) {
-    return this.adminService.updateEvent(parseInt(id), updateEventDto);
+  updateEvent(
+    @Param('id') id: string,
+    @Body() updateEventDto: UpdateEventDto,
+    @UploadedFiles()
+    files?: {
+      images?: Express.Multer.File[];
+      image?: Express.Multer.File[];
+    },
+  ) {
+    const uploadFiles = [
+      ...(files?.images ?? []),
+      ...(files?.image ?? []),
+    ];
+    return this.adminService.updateEvent(parseInt(id), updateEventDto, uploadFiles);
   }
 
   @Delete('events/:id')
@@ -308,6 +358,56 @@ export class AdminController {
   @ApiResponse({ status: 404, description: 'Event not found' })
   deleteEvent(@Param('id') id: string) {
     return this.adminService.deleteEvent(parseInt(id));
+  }
+
+  // ==================== FAQs Management ====================
+  @Get('faqs')
+  @ApiOperation({ summary: 'Get all FAQs (paginated)' })
+  @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
+  @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
+  @ApiQuery({ name: 'isPublished', required: false, type: Boolean })
+  @ApiResponse({ status: 200, description: 'List of FAQs' })
+  getFaqs(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('isPublished') isPublished?: string,
+  ) {
+    const pageNum = parseInt(page) || 1;
+    const limitNum = parseInt(limit) || 10;
+    const isPublishedFilter =
+      isPublished === 'true' ? true : isPublished === 'false' ? false : undefined;
+    return this.adminService.getFaqs(pageNum, limitNum, isPublishedFilter);
+  }
+
+  @Get('faqs/:id')
+  @ApiOperation({ summary: 'Get an FAQ by ID' })
+  @ApiResponse({ status: 200, description: 'FAQ details' })
+  @ApiResponse({ status: 404, description: 'FAQ not found' })
+  getFaq(@Param('id') id: string) {
+    return this.adminService.getFaq(parseInt(id));
+  }
+
+  @Post('faqs')
+  @ApiOperation({ summary: 'Create a new FAQ' })
+  @ApiResponse({ status: 201, description: 'FAQ created successfully' })
+  createFaq(@Body() createFaqDto: CreateFaqDto) {
+    return this.adminService.createFaq(createFaqDto);
+  }
+
+  @Patch('faqs/:id')
+  @ApiOperation({ summary: 'Update an FAQ' })
+  @ApiResponse({ status: 200, description: 'FAQ updated successfully' })
+  @ApiResponse({ status: 404, description: 'FAQ not found' })
+  updateFaq(@Param('id') id: string, @Body() updateFaqDto: UpdateFaqDto) {
+    return this.adminService.updateFaq(parseInt(id), updateFaqDto);
+  }
+
+  @Delete('faqs/:id')
+  @ApiOperation({ summary: 'Delete an FAQ' })
+  @ApiResponse({ status: 200, description: 'FAQ deleted successfully' })
+  @ApiResponse({ status: 404, description: 'FAQ not found' })
+  deleteFaq(@Param('id') id: string) {
+    return this.adminService.deleteFaq(parseInt(id));
   }
 
   // ==================== Appointments Management ====================

@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { Express } from 'express';
 import { UserService } from '../user/user.service';
 import { ChildrenService } from '../children/children.service';
 import { ServicesService } from '../services/services.service';
@@ -18,7 +19,6 @@ import { CreateReportDto } from '../reports/dto/create-report.dto';
 import { UpdateReportDto } from '../reports/dto/update-report.dto';
 import { UpdateAppointmentDto } from '../appointments/dto/update-appointment.dto';
 import { AppointmentStatus } from '@/entities/appointment.entity';
-import { EventType } from '@/entities/event.entity';
 import { Role } from '@/common/enums/roles.enum';
 import { AuditLogsService } from '../audit-logs/audit-logs.service';
 import { MessagesService } from '../messages/messages.service';
@@ -26,6 +26,9 @@ import { AuditAction } from '@/entities/audit-log.entity';
 import { CreateMessageDto } from '../messages/dto/create-message.dto';
 import { UpdateMessageDto } from '../messages/dto/update-message.dto';
 import { MessageType } from '@/entities/message.entity';
+import { FaqsService } from '../faqs/faqs.service';
+import { CreateFaqDto } from '../faqs/dto/create-faq.dto';
+import { UpdateFaqDto } from '../faqs/dto/update-faq.dto';
 
 @Injectable()
 export class AdminService {
@@ -39,6 +42,7 @@ export class AdminService {
     private readonly dashboardService: DashboardService,
     private readonly auditLogsService: AuditLogsService,
     private readonly messagesService: MessagesService,
+    private readonly faqsService: FaqsService,
   ) {}
 
   // ==================== Dashboard ====================
@@ -133,7 +137,7 @@ export class AdminService {
     limit: number = 10,
     isPublished?: boolean,
     isFeatured?: boolean,
-    type?: EventType,
+    type?: string,
   ) {
     return this.eventsService.findAll(page, limit, isPublished, isFeatured, type);
   }
@@ -142,16 +146,41 @@ export class AdminService {
     return this.eventsService.findOne(id);
   }
 
-  async createEvent(createEventDto: CreateEventDto) {
-    return this.eventsService.create(createEventDto);
+  async createEvent(createEventDto: CreateEventDto, imageFiles?: Express.Multer.File[]) {
+    return this.eventsService.create(createEventDto, imageFiles);
   }
 
-  async updateEvent(id: number, updateEventDto: UpdateEventDto) {
-    return this.eventsService.update(id, updateEventDto);
+  async updateEvent(
+    id: number,
+    updateEventDto: UpdateEventDto,
+    imageFiles?: Express.Multer.File[],
+  ) {
+    return this.eventsService.update(id, updateEventDto, imageFiles);
   }
 
   async deleteEvent(id: number) {
     return this.eventsService.remove(id);
+  }
+
+  // ==================== FAQs Management ====================
+  async getFaqs(page: number = 1, limit: number = 10, isPublished?: boolean) {
+    return this.faqsService.findAll(page, limit, isPublished);
+  }
+
+  async getFaq(id: number) {
+    return this.faqsService.findOne(id);
+  }
+
+  async createFaq(createFaqDto: CreateFaqDto) {
+    return this.faqsService.create(createFaqDto);
+  }
+
+  async updateFaq(id: number, updateFaqDto: UpdateFaqDto) {
+    return this.faqsService.update(id, updateFaqDto);
+  }
+
+  async deleteFaq(id: number) {
+    return this.faqsService.remove(id);
   }
 
   // ==================== Appointments Management ====================
@@ -233,11 +262,11 @@ export class AdminService {
   }
 
   async updateReport(id: number, updateReportDto: UpdateReportDto, adminId: number) {
-    return this.reportsService.update(id, updateReportDto, adminId);
+    return this.reportsService.update(id, updateReportDto, adminId, Role.Admin);
   }
 
   async deleteReport(id: number, adminId: number) {
-    return this.reportsService.remove(id, adminId);
+    return this.reportsService.remove(id, adminId, Role.Admin);
   }
 
   // ==================== Audit Logs Management ====================
