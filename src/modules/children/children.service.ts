@@ -38,10 +38,10 @@ export class ChildrenService {
       throw new HttpException('Parent not found', HttpStatus.NOT_FOUND);
     }
 
-    // If therapist is assigned, verify therapist exists
+    // If therapist is assigned, verify user exists (can be any user)
     if (createChildDto.therapistId) {
       const therapist = await this.userRepository.findOne({
-        where: { id: createChildDto.therapistId, role: Role.Therapist },
+        where: { id: createChildDto.therapistId },
       });
 
       if (!therapist) {
@@ -81,7 +81,7 @@ export class ChildrenService {
   }
 
   /**
-   * Find all children (admin/therapist only)
+   * Find all children (admin only)
    * @param page - Page number
    * @param limit - Items per page
    * @returns Paginated list of children
@@ -97,28 +97,6 @@ export class ChildrenService {
     return Helper.paginateResponse({ data: [children, total], page, limit });
   }
 
-  /**
-   * Find children by therapist
-   * @param therapistId - Therapist user ID
-   * @param page - Page number
-   * @param limit - Items per page
-   * @returns Paginated list of children
-   */
-  async findByTherapist(
-    therapistId: number,
-    page: number = 1,
-    limit: number = 10,
-  ) {
-    const [children, total] = await this.childRepository.findAndCount({
-      where: { therapistId },
-      relations: ['parent', 'therapist'],
-      skip: (page - 1) * limit,
-      take: limit,
-      order: { createdAt: 'DESC' },
-    });
-
-    return Helper.paginateResponse({ data: [children, total], page, limit });
-  }
 
   /**
    * Find one child by ID
@@ -142,10 +120,7 @@ export class ChildrenService {
       throw new HttpException('Unauthorized access', HttpStatus.FORBIDDEN);
     }
 
-    // Therapist can only see their assigned children
-    if (userRole === Role.Therapist && child.therapistId !== userId) {
-      throw new HttpException('Unauthorized access', HttpStatus.FORBIDDEN);
-    }
+    // Admins can access all children
 
     return child;
   }
@@ -164,12 +139,22 @@ export class ChildrenService {
     userId?: number,
     userRole?: Role,
   ): Promise<Child> {
-    const child = await this.findOne(id, userId, userRole);
+    // If userId/userRole are not provided, skip authorization check (admin case)
+    const child = userId && userRole
+      ? await this.findOne(id, userId, userRole)
+      : await this.childRepository.findOne({
+          where: { id },
+          relations: ['parent', 'therapist'],
+        });
+    
+    if (!child) {
+      throw new NotFoundException('Child not found');
+    }
 
-    // Verify therapist if being assigned
+    // Verify therapist if being assigned (can be any user)
     if (updateChildDto.therapistId) {
       const therapist = await this.userRepository.findOne({
-        where: { id: updateChildDto.therapistId, role: Role.Therapist },
+        where: { id: updateChildDto.therapistId },
       });
 
       if (!therapist) {
@@ -188,7 +173,18 @@ export class ChildrenService {
    * @param userRole - User role (for authorization check)
    */
   async remove(id: number, userId?: number, userRole?: Role): Promise<void> {
-    const child = await this.findOne(id, userId, userRole);
+    // If userId/userRole are not provided, skip authorization check (admin case)
+    const child = userId && userRole
+      ? await this.findOne(id, userId, userRole)
+      : await this.childRepository.findOne({
+          where: { id },
+          relations: ['parent', 'therapist'],
+        });
+    
+    if (!child) {
+      throw new NotFoundException('Child not found');
+    }
+    
     await this.childRepository.softRemove(child);
   }
 }

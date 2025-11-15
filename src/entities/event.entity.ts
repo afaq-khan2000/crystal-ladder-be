@@ -1,14 +1,6 @@
 import { Entity, Column } from 'typeorm';
 import Model from './base.entity';
 
-export enum EventType {
-  Announcement = 'announcement',
-  Activity = 'activity',
-  Workshop = 'workshop',
-  Meeting = 'meeting',
-  Other = 'other',
-}
-
 @Entity('events')
 export class Event extends Model {
   @Column({ type: 'varchar', length: 200 })
@@ -18,11 +10,11 @@ export class Event extends Model {
   description: string;
 
   @Column({
-    type: 'enum',
-    enum: EventType,
-    default: EventType.Announcement,
+    type: 'varchar',
+    length: 100,
+    default: 'announcement',
   })
-  type: EventType;
+  type: string;
 
   @Column({ name: 'event_date', type: 'timestamp' })
   eventDate: Date;

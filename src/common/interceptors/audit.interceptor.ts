@@ -54,8 +54,8 @@ export class AuditInterceptor implements NestInterceptor {
 
     return next.handle().pipe(
       tap(async () => {
-        // Only log if user is authenticated and is admin/therapist
-        if (user && ['admin', 'therapist', 'content-manager'].includes(user.role)) {
+        // Only log if user is authenticated and is admin
+        if (user && user.role === 'admin') {
           try {
             const auditLog = this.auditLogRepository.create({
               action,

@@ -7,7 +7,7 @@ import { Service } from '@/entities/service.entity';
 import { Appointment, AppointmentStatus } from '@/entities/appointment.entity';
 import { Report, ReportType } from '@/entities/report.entity';
 import { Message, MessageType } from '@/entities/message.entity';
-import { Event, EventType } from '@/entities/event.entity';
+import { Event } from '@/entities/event.entity';
 import { AuditLog, AuditAction } from '@/entities/audit-log.entity';
 import { Role } from '@/common/enums/roles.enum';
 import { Helper } from '@/utils';
@@ -94,45 +94,6 @@ export class SeederService {
         isProfileComplete: true,
         isApproved: true,
       },
-      // Therapist 1
-      {
-        email: 'therapist1@crystalladder.com',
-        firstName: 'Sarah',
-        lastName: 'Johnson',
-        password: 'Therapist@123',
-        role: Role.Therapist,
-        phone: '+1-555-0102',
-        address: '456 Therapy Avenue, City, State 12345',
-        isEmailVerified: true,
-        isProfileComplete: true,
-        isApproved: true,
-      },
-      // Therapist 2
-      {
-        email: 'therapist2@crystalladder.com',
-        firstName: 'Michael',
-        lastName: 'Chen',
-        password: 'Therapist@123',
-        role: Role.Therapist,
-        phone: '+1-555-0103',
-        address: '789 Care Lane, City, State 12345',
-        isEmailVerified: true,
-        isProfileComplete: true,
-        isApproved: true,
-      },
-      // Content Manager
-      {
-        email: 'content@crystalladder.com',
-        firstName: 'Emily',
-        lastName: 'Davis',
-        password: 'Content@123',
-        role: Role.ContentManager,
-        phone: '+1-555-0104',
-        address: '321 Content Road, City, State 12345',
-        isEmailVerified: true,
-        isProfileComplete: true,
-        isApproved: true,
-      },
       // Parent 1
       {
         email: 'parent1@example.com',
@@ -193,7 +154,7 @@ export class SeederService {
     this.logger.log('👶 Seeding children...');
 
     const parents = users.filter((u) => u.role === Role.Parent);
-    const therapists = users.filter((u) => u.role === Role.Therapist);
+    const admin = users.find((u) => u.role === Role.Admin);
 
     const childrenData = [
       {
@@ -204,7 +165,7 @@ export class SeederService {
         diagnosis: 'Autism Spectrum Disorder (ASD) - Level 2',
         notes: 'Emma responds well to visual schedules and routine-based activities.',
         parentId: parents[0].id,
-        therapistId: therapists[0].id,
+        therapistId: admin?.id,
       },
       {
         firstName: 'James',
@@ -214,7 +175,7 @@ export class SeederService {
         diagnosis: 'Autism Spectrum Disorder (ASD) - Level 1',
         notes: 'James is making excellent progress with speech therapy.',
         parentId: parents[0].id,
-        therapistId: therapists[0].id,
+        therapistId: admin?.id,
       },
       {
         firstName: 'Olivia',
@@ -224,7 +185,7 @@ export class SeederService {
         diagnosis: 'Autism Spectrum Disorder (ASD) - Level 3',
         notes: 'Olivia requires intensive support and benefits from sensory integration therapy.',
         parentId: parents[1].id,
-        therapistId: therapists[1].id,
+        therapistId: admin?.id,
       },
       {
         firstName: 'Noah',
@@ -234,7 +195,7 @@ export class SeederService {
         diagnosis: 'Autism Spectrum Disorder (ASD) - Level 2',
         notes: 'Noah is showing improvement in social communication skills.',
         parentId: parents[1].id,
-        therapistId: therapists[1].id,
+        therapistId: admin?.id,
       },
     ];
 
@@ -316,7 +277,7 @@ export class SeederService {
     this.logger.log('📅 Seeding appointments...');
 
     const parents = users.filter((u) => u.role === Role.Parent);
-    const therapists = users.filter((u) => u.role === Role.Therapist);
+    const admin = users.find((u) => u.role === Role.Admin);
 
     const appointmentsData = [
       {
@@ -325,7 +286,7 @@ export class SeederService {
         notes: 'Regular weekly session',
         parentId: parents[0].id,
         childId: children[0].id,
-        therapistId: therapists[0].id,
+        therapistId: admin?.id,
         serviceId: services[0].id,
       },
       {
@@ -334,7 +295,7 @@ export class SeederService {
         notes: 'Initial assessment appointment',
         parentId: parents[0].id,
         childId: children[1].id,
-        therapistId: therapists[0].id,
+        therapistId: admin?.id,
         serviceId: services[1].id,
       },
       {
@@ -343,7 +304,7 @@ export class SeederService {
         notes: 'Follow-up session',
         parentId: parents[1].id,
         childId: children[2].id,
-        therapistId: therapists[1].id,
+        therapistId: admin?.id,
         serviceId: services[2].id,
       },
       {
@@ -352,7 +313,7 @@ export class SeederService {
         notes: 'Completed successfully',
         parentId: parents[0].id,
         childId: children[0].id,
-        therapistId: therapists[0].id,
+        therapistId: admin?.id,
         serviceId: services[0].id,
       },
       {
@@ -361,7 +322,7 @@ export class SeederService {
         notes: 'Good progress observed',
         parentId: parents[1].id,
         childId: children[2].id,
-        therapistId: therapists[1].id,
+        therapistId: admin?.id,
         serviceId: services[2].id,
       },
       {
@@ -388,7 +349,7 @@ export class SeederService {
   private async seedReports(users: User[], children: Child[]): Promise<void> {
     this.logger.log('📊 Seeding reports...');
 
-    const therapists = users.filter((u) => u.role === Role.Therapist);
+    const admin = users.find((u) => u.role === Role.Admin);
 
     const reportsData = [
       {
@@ -403,7 +364,7 @@ export class SeederService {
         },
         attachments: [],
         childId: children[0].id,
-        therapistId: therapists[0].id,
+        therapistId: admin?.id,
       },
       {
         title: 'Session Summary - Week 3',
@@ -416,7 +377,7 @@ export class SeederService {
         },
         attachments: [],
         childId: children[1].id,
-        therapistId: therapists[0].id,
+        therapistId: admin?.id,
       },
       {
         title: 'Assessment Report - Initial Evaluation',
@@ -429,7 +390,7 @@ export class SeederService {
         },
         attachments: [],
         childId: children[2].id,
-        therapistId: therapists[1].id,
+        therapistId: admin?.id,
       },
       {
         title: 'Monthly Progress Update',
@@ -441,7 +402,7 @@ export class SeederService {
         },
         attachments: [],
         childId: children[3].id,
-        therapistId: therapists[1].id,
+        therapistId: admin?.id,
       },
     ];
 
@@ -457,9 +418,7 @@ export class SeederService {
     this.logger.log('💬 Seeding messages...');
 
     const admin = users.find((u) => u.role === Role.Admin);
-    const therapists = users.filter((u) => u.role === Role.Therapist);
     const parents = users.filter((u) => u.role === Role.Parent);
-    const contentManager = users.find((u) => u.role === Role.ContentManager);
 
     const messagesData = [
       {
@@ -475,7 +434,7 @@ export class SeederService {
         subject: 'Appointment Reminder - Tomorrow at 2 PM',
         content: 'This is a reminder that you have an appointment scheduled for tomorrow at 2:00 PM. Please arrive 10 minutes early.',
         type: MessageType.Direct,
-        senderId: therapists[0].id,
+        senderId: admin.id,
         receiverId: parents[0].id,
         isRead: false,
         attachments: [],
@@ -484,7 +443,7 @@ export class SeederService {
         subject: 'Monthly Newsletter - February 2024',
         content: 'Check out our latest newsletter featuring success stories, upcoming events, and helpful resources for parents.',
         type: MessageType.Newsletter,
-        senderId: contentManager.id,
+        senderId: admin.id,
         receiverId: null,
         isRead: false,
         attachments: [],
@@ -493,7 +452,7 @@ export class SeederService {
         subject: 'Progress Update Available',
         content: 'A new progress report for your child is now available in the portal. Please review it at your convenience.',
         type: MessageType.Direct,
-        senderId: therapists[1].id,
+        senderId: admin.id,
         receiverId: parents[1].id,
         isRead: true,
         attachments: [],
@@ -502,7 +461,7 @@ export class SeederService {
         subject: 'Upcoming Workshop - Communication Strategies',
         content: 'We are hosting a free workshop for parents on effective communication strategies. Register now to secure your spot!',
         type: MessageType.Announcement,
-        senderId: contentManager.id,
+        senderId: admin.id,
         receiverId: null,
         isRead: false,
         attachments: [],
@@ -524,7 +483,7 @@ export class SeederService {
       {
         title: 'Parent Workshop: Understanding Autism',
         description: 'Join us for an informative workshop where parents can learn about autism spectrum disorder, effective strategies, and available resources.',
-        type: EventType.Workshop,
+        type: 'workshop',
         eventDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // 2 weeks from now
         eventEndDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000 + 2 * 60 * 60 * 1000), // 2 hours later
         location: 'Crystal Ladder Learning Centre - Main Hall',
@@ -535,7 +494,7 @@ export class SeederService {
       {
         title: 'Family Fun Day',
         description: 'A day of fun activities for the whole family! Games, food, and entertainment for children and parents.',
-        type: EventType.Activity,
+        type: 'activity',
         eventDate: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000), // 3 weeks from now
         eventEndDate: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000 + 4 * 60 * 60 * 1000), // 4 hours later
         location: 'Community Park',
@@ -546,7 +505,7 @@ export class SeederService {
       {
         title: 'Important Announcement: New Services Available',
         description: 'We are excited to announce new therapy services including music therapy and art therapy. Contact us for more information.',
-        type: EventType.Announcement,
+        type: 'announcement',
         eventDate: new Date(),
         eventEndDate: null,
         location: null,
@@ -557,7 +516,7 @@ export class SeederService {
       {
         title: 'Monthly Parent Support Group Meeting',
         description: 'Monthly meeting for parents to share experiences, get support, and learn from each other.',
-        type: EventType.Meeting,
+        type: 'meeting',
         eventDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 1 week from now
         eventEndDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000 + 90 * 60 * 1000), // 90 minutes later
         location: 'Crystal Ladder Learning Centre - Conference Room',
@@ -568,7 +527,7 @@ export class SeederService {
       {
         title: 'Summer Camp Registration Open',
         description: 'Registration for our summer camp program is now open! Limited spots available. Register early to secure your child\'s place.',
-        type: EventType.Announcement,
+        type: 'announcement',
         eventDate: new Date(),
         eventEndDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
         location: null,
@@ -590,7 +549,6 @@ export class SeederService {
     this.logger.log('📝 Seeding audit logs...');
 
     const admin = users.find((u) => u.role === Role.Admin);
-    const therapists = users.filter((u) => u.role === Role.Therapist);
 
     const auditLogsData = [
       {
@@ -617,16 +575,16 @@ export class SeederService {
         action: AuditAction.Approve,
         entity: 'appointment',
         entityId: 1,
-        description: 'Therapist approved an appointment',
+        description: 'Admin approved an appointment',
         changes: { status: 'approved' },
-        userId: therapists[0].id,
-        ipAddress: '192.168.1.101',
-        userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)',
+        userId: admin.id,
+        ipAddress: '192.168.1.100',
+        userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
       },
       {
         action: AuditAction.Update,
         entity: 'user',
-        entityId: 5,
+        entityId: 2,
         description: 'Admin updated user profile',
         changes: { isApproved: true },
         userId: admin.id,
@@ -637,11 +595,11 @@ export class SeederService {
         action: AuditAction.View,
         entity: 'report',
         entityId: 1,
-        description: 'Therapist viewed a report',
+        description: 'Admin viewed a report',
         changes: {},
-        userId: therapists[1].id,
-        ipAddress: '192.168.1.102',
-        userAgent: 'Mozilla/5.0 (Linux; Ubuntu)',
+        userId: admin.id,
+        ipAddress: '192.168.1.100',
+        userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
       },
     ];
 

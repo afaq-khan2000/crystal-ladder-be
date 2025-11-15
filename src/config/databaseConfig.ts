@@ -22,6 +22,7 @@ const dataSourceOptions: DataSourceOptions = {
   entities: [__dirname + '/../**/entities/*.{ts,js}'],
   migrations: [__dirname + '/../**/migrations/**/*{.ts,.js}'],
   migrationsTableName: 'typeorm_migrations',
+  migrationsRun: true,
   synchronize: false, // never use TRUE in production!
   // debug: true,
 };

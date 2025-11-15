@@ -5,8 +5,11 @@ import { JwtPayload } from './interface/Jwt.interface';
 import { UserService } from '../user/user.service';
 import { RegisterUserDto } from './dto/registration.dto';
 import { Helper as helper } from '@/utils';
-
+import { EmailService } from '@/shared/email/email.service';
 import { ConfigService } from '@nestjs/config';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { User } from '@/entities/user.entity';
 
 @Injectable()
 @Global()
@@ -15,6 +18,9 @@ export class AuthService {
     private usersService: UserService,
     private jwtService: JwtService,
     private readonly config: ConfigService,
+    private emailService: EmailService,
+    @InjectRepository(User)
+    private userRepository: Repository<User>,
   ) {}
 
   async login(body: AuthDto): Promise<unknown> {
@@ -50,19 +56,89 @@ export class AuthService {
 
   async registration(body: RegisterUserDto) {
     const user = await this.usersService.register(body);
+    
+    // Generate OTP and send verification email
+    const otpCode = helper.generateOTP();
+    user.otpCode = otpCode;
+    await this.userRepository.save(user);
+    
+    // Send verification email
+    await this.emailService.sendVerificationEmail(user.email, otpCode);
+    
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { password, ...rest } = user;
-    const jwt_token = await this.createAccessToken({
-      id: user.id,
-      email: user.email,
-      role: user.role,
-    });
+    const { password, otpCode: _, ...rest } = user;
     return {
       status: HttpStatus.OK,
+      message: 'Registration successful. Please verify your email with the OTP sent to your email address.',
       data: {
         ...rest,
-        access_token: jwt_token,
       },
+    };
+  }
+
+  /**
+   * Verify email with OTP
+   * @param email - User email
+   * @param otpCode - OTP code
+   * @returns Success message
+   */
+  async verifyEmail(email: string, otpCode: string) {
+    const user = await this.userRepository.findOne({
+      where: { email },
+    });
+
+    if (!user) {
+      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+    }
+
+    if (user.isEmailVerified) {
+      throw new HttpException('Email already verified', HttpStatus.BAD_REQUEST);
+    }
+
+    if (!user.otpCode || user.otpCode !== otpCode) {
+      throw new HttpException('Invalid or expired OTP', HttpStatus.BAD_REQUEST);
+    }
+
+    // Verify email
+    user.isEmailVerified = true;
+    user.otpCode = null;
+    await this.userRepository.save(user);
+
+    return {
+      status: HttpStatus.OK,
+      message: 'Email verified successfully',
+    };
+  }
+
+  /**
+   * Resend verification OTP
+   * @param email - User email
+   * @returns Success message
+   */
+  async resendVerificationOTP(email: string) {
+    const user = await this.userRepository.findOne({
+      where: { email },
+    });
+
+    if (!user) {
+      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+    }
+
+    if (user.isEmailVerified) {
+      throw new HttpException('Email already verified', HttpStatus.BAD_REQUEST);
+    }
+
+    // Generate new OTP
+    const otpCode = helper.generateOTP();
+    user.otpCode = otpCode;
+    await this.userRepository.save(user);
+
+    // Send verification email
+    await this.emailService.sendVerificationEmail(user.email, otpCode);
+
+    return {
+      status: HttpStatus.OK,
+      message: 'Verification OTP sent successfully',
     };
   }
 

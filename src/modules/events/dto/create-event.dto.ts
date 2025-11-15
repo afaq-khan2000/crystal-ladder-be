@@ -8,7 +8,20 @@ import {
   MinLength,
   MaxLength,
 } from 'class-validator';
-import { EventType } from '@/entities/event.entity';
+import { Transform } from 'class-transformer';
+
+const toBoolean = (value: any) => {
+  if (typeof value === 'boolean') {
+    return value;
+  }
+
+  if (typeof value === 'string') {
+    if (value.toLowerCase() === 'true') return true;
+    if (value.toLowerCase() === 'false') return false;
+  }
+
+  return value;
+};
 
 export class CreateEventDto {
   @ApiProperty({ description: 'Event title', example: 'Parent Workshop - Communication Strategies' })
@@ -23,12 +36,12 @@ export class CreateEventDto {
 
   @ApiProperty({
     description: 'Event type',
-    enum: EventType,
-    default: EventType.Announcement,
+    example: 'announcement',
+    required: false,
   })
   @IsString()
   @IsOptional()
-  type?: EventType;
+  type?: string;
 
   @ApiProperty({
     description: 'Event start date and time',
@@ -70,6 +83,7 @@ export class CreateEventDto {
   })
   @IsBoolean()
   @IsOptional()
+  @Transform(({ value }) => toBoolean(value))
   isPublished?: boolean;
 
   @ApiProperty({
@@ -78,6 +92,7 @@ export class CreateEventDto {
   })
   @IsBoolean()
   @IsOptional()
+  @Transform(({ value }) => toBoolean(value))
   isFeatured?: boolean;
 }
 

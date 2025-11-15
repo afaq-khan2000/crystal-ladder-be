@@ -1,5 +1,6 @@
 import { Global, Module, Logger } from '@nestjs/common';
 import { LoggerModule } from './logger/logger.module';
+import { EmailModule } from './email/email.module';
 import { ConfigService } from '@nestjs/config';
 import { DataSource } from 'typeorm';
 import { APP_INTERCEPTOR } from '@nestjs/core';
@@ -24,6 +25,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
     }),
 
     LoggerModule.forRoot(),
+    EmailModule,
   ],
   providers: [
     {

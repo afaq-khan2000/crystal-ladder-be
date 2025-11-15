@@ -1,11 +1,13 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
 
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from '../../entities/user.entity';
 import { Repository } from 'typeorm';
 import { NOT_FOUND_RESPONSE } from '@/common/constants/http-responses.types';
-import { AuthDto } from '../auth/dto/auth.dto';
+import { RegisterUserDto } from '../auth/dto/registration.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 import { Helper } from '@/utils';
+import { Role } from '@/common/enums/roles.enum';
 
 @Injectable()
 export class UserService {
@@ -14,7 +16,7 @@ export class UserService {
     private userRepo: Repository<User>,
   ) {}
 
-  async register(body: AuthDto) {
+  async register(body: RegisterUserDto) {
     const { email } = body;
     const user = await this.userRepo.findOneBy({ email });
 
@@ -28,21 +30,112 @@ export class UserService {
     );
   }
 
-  async findAll(): Promise<unknown> {
-    const users = await this.userRepo.findAndCount({
+  async findAll(
+    page: number = 1,
+    limit: number = 10,
+    role?: Role,
+    isApproved?: boolean,
+    isEmailVerified?: boolean,
+  ): Promise<unknown> {
+    const where: any = {};
+
+    if (role) {
+      where.role = role;
+    }
+
+    if (isApproved !== undefined) {
+      where.isApproved = isApproved;
+    }
+
+    if (isEmailVerified !== undefined) {
+      where.isEmailVerified = isEmailVerified;
+    }
+
+    const [users, total] = await this.userRepo.findAndCount({
+      where,
       select: [
         'id',
         'firstName',
         'lastName',
         'email',
+        'phone',
+        'role',
+        'isEmailVerified',
+        'isApproved',
+        'isProfileComplete',
         'createdAt',
         'updatedAt',
       ],
-      skip: 0,
-      take: 10,
+      skip: (page - 1) * limit,
+      take: limit,
+      order: { createdAt: 'DESC' },
     });
 
-    return Helper.paginateResponse({ data: users, page: 1, limit: 10 });
+    return Helper.paginateResponse({ data: [users, total], page, limit });
+  }
+
+  /**
+   * Find one user by ID
+   * @param id - User ID
+   * @returns User record
+   */
+  async findOne(id: number): Promise<User> {
+    const user = await this.userRepo.findOne({
+      where: { id },
+      relations: ['children'],
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return user;
+  }
+
+  /**
+   * Update user record
+   * @param id - User ID
+   * @param updateUserDto - Updated user data
+   * @returns Updated user
+   */
+  async update(id: number, updateUserDto: UpdateUserDto): Promise<User> {
+    const user = await this.findOne(id);
+
+    // Check if email is being changed and if it's already taken
+    if (updateUserDto.email && updateUserDto.email !== user.email) {
+      const existingUser = await this.userRepo.findOne({
+        where: { email: updateUserDto.email },
+      });
+
+      if (existingUser && existingUser.id !== id) {
+        throw new HttpException('Email already exists', HttpStatus.CONFLICT);
+      }
+    }
+
+    Object.assign(user, updateUserDto);
+    return await this.userRepo.save(user);
+  }
+
+  /**
+   * Approve a user (Admin only)
+   * @param id - User ID
+   * @returns Updated user
+   */
+  async approveUser(id: number): Promise<User> {
+    const user = await this.findOne(id);
+    user.isApproved = true;
+    return await this.userRepo.save(user);
+  }
+
+  /**
+   * Reject/Unapprove a user (Admin only)
+   * @param id - User ID
+   * @returns Updated user
+   */
+  async unapproveUser(id: number): Promise<User> {
+    const user = await this.findOne(id);
+    user.isApproved = false;
+    return await this.userRepo.save(user);
   }
 
   async getByUserByEmail(email: string) {

@@ -60,6 +60,30 @@ This document lists all required environment variables for the Crystal Ladder Ba
   - Example: `SWAGGER_PATH=docs`
   - Access at: `http://localhost:3001/api/docs`
 
+### Email Configuration (SMTP - Gmail)
+- **SMTP_HOST** - SMTP server host
+  - Default: `smtp.gmail.com`
+  - Example: `SMTP_HOST=smtp.gmail.com`
+
+- **SMTP_PORT** - SMTP server port
+  - Default: `587`
+  - Example: `SMTP_PORT=587` (for TLS) or `SMTP_PORT=465` (for SSL)
+
+- **SMTP_USER** - SMTP username (your Gmail address)
+  - Example: `SMTP_USER=your-email@gmail.com`
+
+- **SMTP_PASSWORD** - SMTP password (Gmail App Password)
+  - Example: `SMTP_PASSWORD=your-16-character-app-password`
+  - **Note**: For Gmail, you need to generate an App Password:
+    1. Go to your Google Account settings
+    2. Enable 2-Step Verification
+    3. Go to App Passwords and generate a new app password
+    4. Use the 16-character password (without spaces) as SMTP_PASSWORD
+
+- **SMTP_FROM_EMAIL** - Email address to use as sender (optional)
+  - Default: Uses SMTP_USER if not provided
+  - Example: `SMTP_FROM_EMAIL=noreply@crystalladder.com`
+
 ## Optional Environment Variables
 
 - **TEST** - Test mode flag (used for testing)
@@ -131,5 +155,12 @@ JWT_EXPIRES_IN=7d
 # Swagger Configuration
 SWAGGER_ENABLE=true
 SWAGGER_PATH=docs
+
+# Email Configuration (SMTP - Gmail)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your-email@gmail.com
+SMTP_PASSWORD=your-16-character-app-password
+SMTP_FROM_EMAIL=your-email@gmail.com
 ```
 

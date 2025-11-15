@@ -7,14 +7,9 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import typeorm from './config/databaseConfig';
 import { SharedModule } from './shared/shared.module';
 import { AuthModule } from './modules/auth/auth.module';
-import { UserModule } from './modules/user/user.module';
-import { ChildrenModule } from './modules/children/children.module';
-import { ServicesModule } from './modules/services/services.module';
-import { AppointmentsModule } from './modules/appointments/appointments.module';
-import { ReportsModule } from './modules/reports/reports.module';
-import { MessagesModule } from './modules/messages/messages.module';
-import { EventsModule } from './modules/events/events.module';
-import { AuditLogsModule } from './modules/audit-logs/audit-logs.module';
+import { PublicModule } from './modules/public/public.module';
+import { AdminModule } from './modules/admin/admin.module';
+import { ParentModule } from './modules/parent/parent.module';
 import { SeederModule } from './database/seeder.module';
 
 config();
@@ -38,15 +33,10 @@ config();
       },
     ]),
     SharedModule,
+    PublicModule,
     AuthModule,
-    UserModule,
-    ChildrenModule,
-    ServicesModule,
-    AppointmentsModule,
-    ReportsModule,
-    MessagesModule,
-    EventsModule,
-    AuditLogsModule,
+    AdminModule,
+    ParentModule,
     SeederModule,
   ],
   controllers: [AppController],
