@@ -7,6 +7,7 @@ import {
 } from '@nestjs/swagger';
 import { PublicService } from './public.service';
 import { BookAppointmentDto } from '../appointments/dto/book-appointment.dto';
+import { ContactFormDto } from './dto/contact-form.dto';
 
 @Controller('public')
 @ApiTags('public')
@@ -162,6 +163,19 @@ export class PublicController {
   })
   bookAppointment(@Body() bookAppointmentDto: BookAppointmentDto) {
     return this.publicService.bookAppointment(bookAppointmentDto);
+  }
+
+  /**
+   * Submit contact form (public)
+   */
+  @Post('contact')
+  @ApiOperation({ summary: 'Submit contact form (public)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Contact form submitted successfully',
+  })
+  submitContact(@Body() contactFormDto: ContactFormDto) {
+    return this.publicService.submitContactForm(contactFormDto);
   }
 }
 

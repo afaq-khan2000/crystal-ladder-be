@@ -316,4 +316,3 @@ export class ParentController {
     return this.parentService.deleteMessage(parseInt(id), req.user.id);
   }
 }
-

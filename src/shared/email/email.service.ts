@@ -8,16 +8,26 @@ export class EmailService {
   private transporter: Transporter;
   private readonly logger = new Logger(EmailService.name);
   private readonly fromEmail: string;
+  private readonly frontendBaseUrl: string;
 
   constructor(private readonly configService: ConfigService) {
-    const smtpHost = this.configService.get<string>('SMTP_HOST') || 'smtp.gmail.com';
+    const smtpHost =
+      this.configService.get<string>('SMTP_HOST') || 'smtp.gmail.com';
     const smtpPort = this.configService.get<number>('SMTP_PORT') || 587;
     const smtpUser = this.configService.get<string>('SMTP_USER');
     const smtpPassword = this.configService.get<string>('SMTP_PASSWORD');
-    this.fromEmail = this.configService.get<string>('SMTP_FROM_EMAIL') || smtpUser;
+    this.fromEmail =
+      this.configService.get<string>('SMTP_FROM_EMAIL') || smtpUser;
+
+    // Frontend base URL (used in email CTAs, e.g. chat / reset links)
+    // Example: https://app.crystal-ladder.com
+    this.frontendBaseUrl =
+      this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
 
     if (!smtpUser || !smtpPassword) {
-      this.logger.warn('SMTP credentials not configured. Email functionality will be limited.');
+      this.logger.warn(
+        'SMTP credentials not configured. Email functionality will be limited.',
+      );
     }
 
     this.transporter = nodemailer.createTransport({
@@ -80,7 +90,13 @@ export class EmailService {
    * @param otpCode - OTP code
    * @returns Promise with message info
    */
-  async sendVerificationEmail(to: string, otpCode: string): Promise<nodemailer.SentMessageInfo> {
+  async sendVerificationEmail(
+    to: string,
+    otpCode: string,
+  ): Promise<nodemailer.SentMessageInfo> {
+    const chatUrl = `${this.frontendBaseUrl}/chat?email=${encodeURIComponent(
+      to,
+    )}&otp=${encodeURIComponent(otpCode)}`;
     const subject = 'Verify Your Email Address';
     const html = `
       <!DOCTYPE html>
@@ -100,6 +116,11 @@ export class EmailService {
               <h1 style="color: #667eea; font-size: 36px; letter-spacing: 5px; margin: 0;">${otpCode}</h1>
             </div>
             <p style="color: #666; font-size: 14px;">This code will expire in 10 minutes. If you didn't request this verification, please ignore this email.</p>
+            <p style="margin-top: 20px; text-align: center;">
+              <a href="${chatUrl}" style="display: inline-block; padding: 12px 24px; background-color: #667eea; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: bold;">
+                Go to Reset Password
+              </a>
+            </p>
             <p style="margin-top: 30px; color: #666; font-size: 14px;">Best regards,<br>The Crystal Ladder Team</p>
           </div>
         </body>
@@ -115,7 +136,13 @@ export class EmailService {
    * @param otpCode - OTP code
    * @returns Promise with message info
    */
-  async sendPasswordResetEmail(to: string, otpCode: string): Promise<nodemailer.SentMessageInfo> {
+  async sendPasswordResetEmail(
+    to: string,
+    otpCode: string,
+  ): Promise<nodemailer.SentMessageInfo> {
+    const chatUrl = `${this.frontendBaseUrl}/auth/reset-password?email=${encodeURIComponent(
+      to,
+    )}&otp=${encodeURIComponent(otpCode)}`;
     const subject = 'Password Reset Request';
     const html = `
       <!DOCTYPE html>
@@ -135,6 +162,11 @@ export class EmailService {
               <h1 style="color: #667eea; font-size: 36px; letter-spacing: 5px; margin: 0;">${otpCode}</h1>
             </div>
             <p style="color: #666; font-size: 14px;">This code will expire in 10 minutes. If you didn't request a password reset, please ignore this email.</p>
+            <p style="margin-top: 20px; text-align: center;">
+              <a href="${chatUrl}" style="display: inline-block; padding: 12px 24px; background-color: #667eea; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: bold;">
+                Go to Reset Password
+              </a>
+            </p>
             <p style="margin-top: 30px; color: #666; font-size: 14px;">Best regards,<br>The Crystal Ladder Team</p>
           </div>
         </body>
@@ -142,6 +174,57 @@ export class EmailService {
     `;
 
     return this.sendEmail(to, subject, html);
+  }
+
+  /**
+   * Send contact form submission to admin
+   * @param payload - Contact form data
+   */
+  async sendContactFormToAdmin(payload: {
+    fullName: string;
+    email: string;
+    phone: string;
+    helpWith?: string;
+    message: string;
+  }): Promise<nodemailer.SentMessageInfo> {
+    const adminEmail =
+      this.configService.get<string>('ADMIN_EMAIL') || this.fromEmail;
+
+    const subject = `New Contact Form Submission - ${payload.fullName}`;
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+            <h1 style="color: white; margin: 0;">Crystal Ladder - Contact Form</h1>
+          </div>
+          <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px;">
+            <h2 style="color: #333; margin-top: 0;">New Enquiry</h2>
+            <p>A new enquiry has been submitted from the website contact form. Details are below:</p>
+            <div style="background: white; border-radius: 8px; padding: 20px; margin: 20px 0;">
+              <p><strong>Full Name:</strong> ${payload.fullName}</p>
+              <p><strong>Email:</strong> ${payload.email}</p>
+              <p><strong>Phone:</strong> ${payload.phone}</p>
+              ${
+                payload.helpWith
+                  ? `<p><strong>What can we help you with?</strong> ${payload.helpWith}</p>`
+                  : ''
+              }
+              <p><strong>Message:</strong></p>
+              <p style="white-space: pre-line;">${payload.message}</p>
+            </div>
+            <p style="color: #666; font-size: 14px;">Please respond to this enquiry within 24–48 hours.</p>
+          </div>
+        </body>
+      </html>
+    `;
+
+    return this.sendEmail(adminEmail, subject, html);
   }
 
   /**
@@ -160,7 +243,9 @@ export class EmailService {
     },
   ): Promise<nodemailer.SentMessageInfo> {
     const subject = 'Appointment Confirmation - Crystal Ladder';
-    const formattedDate = new Date(appointmentDetails.appointmentDate).toLocaleString('en-US', {
+    const formattedDate = new Date(
+      appointmentDetails.appointmentDate,
+    ).toLocaleString('en-US', {
       weekday: 'long',
       year: 'numeric',
       month: 'long',
@@ -204,7 +289,9 @@ export class EmailService {
    * @param to - Recipient email address
    * @returns Promise with message info
    */
-  async sendRegistrationRequiredEmail(to: string): Promise<nodemailer.SentMessageInfo> {
+  async sendRegistrationRequiredEmail(
+    to: string,
+  ): Promise<nodemailer.SentMessageInfo> {
     const subject = 'Registration Required - Crystal Ladder';
     const html = `
       <!DOCTYPE html>
@@ -237,6 +324,9 @@ export class EmailService {
    * @returns Plain text string
    */
   private stripHtml(html: string): string {
-    return html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
+    return html
+      .replace(/<[^>]*>/g, '')
+      .replace(/&nbsp;/g, ' ')
+      .trim();
   }
 }

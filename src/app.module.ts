@@ -11,6 +11,7 @@ import { PublicModule } from './modules/public/public.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { ParentModule } from './modules/parent/parent.module';
 import { SeederModule } from './database/seeder.module';
+import { MessagesModule } from './modules/messages/messages.module';
 
 config();
 
@@ -38,6 +39,7 @@ config();
     AdminModule,
     ParentModule,
     SeederModule,
+    MessagesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

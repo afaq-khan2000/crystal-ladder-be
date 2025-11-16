@@ -10,6 +10,8 @@ import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '@/entities/user.entity';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 
 @Injectable()
 @Global()
@@ -73,6 +75,70 @@ export class AuthService {
       data: {
         ...rest,
       },
+    };
+  }
+
+  /**
+   * Forgot password - send reset OTP to email
+   * @param body - Forgot password payload
+   */
+  async forgotPassword(body: ForgotPasswordDto) {
+    const user = await this.userRepository.findOne({
+      where: { email: body.email },
+    });
+
+    if (!user) {
+      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+    }
+
+    // Generate OTP for password reset
+    const otpCode = helper.generateOTP();
+    user.otpCode = otpCode;
+    user.isPasswordForget = true;
+    await this.userRepository.save(user);
+
+    // Send password reset email
+    await this.emailService.sendPasswordResetEmail(user.email, otpCode);
+
+    return {
+      status: HttpStatus.OK,
+      message: 'Password reset OTP sent successfully to your email address.',
+    };
+  }
+
+  /**
+   * Reset password using email + OTP
+   * @param body - Reset password payload
+   */
+  async resetPassword(body: ResetPasswordDto) {
+    const user = await this.userRepository.findOne({
+      where: { email: body.email },
+    });
+
+    if (!user) {
+      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+    }
+
+    if (!user.isPasswordForget) {
+      throw new HttpException(
+        'Password reset request not found or already used',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    if (!user.otpCode || user.otpCode !== body.otpCode) {
+      throw new HttpException('Invalid or expired OTP', HttpStatus.BAD_REQUEST);
+    }
+
+    // Update password
+    user.password = await helper.hashPassword(body.password);
+    user.isPasswordForget = false;
+    user.otpCode = null;
+    await this.userRepository.save(user);
+
+    return {
+      status: HttpStatus.OK,
+      message: 'Password has been reset successfully. You can now log in.',
     };
   }
 
