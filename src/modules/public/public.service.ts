@@ -7,8 +7,8 @@ import { Helper } from '@/utils';
 import { AppointmentsService } from '../appointments/appointments.service';
 import { BookAppointmentDto } from '../appointments/dto/book-appointment.dto';
 import { FaqsService } from '../faqs/faqs.service';
-
-
+import { ContactFormDto } from './dto/contact-form.dto';
+import { EmailService } from '@/shared/email/email.service';
 @Injectable()
 export class PublicService {
   constructor(
@@ -18,6 +18,7 @@ export class PublicService {
     private eventRepository: Repository<Event>,
     private readonly appointmentsService: AppointmentsService,
     private readonly faqsService: FaqsService,
+    private readonly emailService: EmailService,
   ) {}
 
   /**
@@ -153,5 +154,23 @@ export class PublicService {
    */
   async bookAppointment(bookAppointmentDto: BookAppointmentDto) {
     return this.appointmentsService.bookAppointment(bookAppointmentDto);
+  }
+
+  /**
+   * Submit contact form (public)
+   * Sends an email to admin with the form details
+   */
+  async submitContactForm(dto: ContactFormDto) {
+    await this.emailService.sendContactFormToAdmin({
+      fullName: dto.fullName,
+      email: dto.email,
+      phone: dto.phone,
+      helpWith: dto.helpWith,
+      message: dto.message,
+    });
+
+    return {
+      message: 'Your message has been sent successfully. We will contact you soon.',
+    };
   }
 }
