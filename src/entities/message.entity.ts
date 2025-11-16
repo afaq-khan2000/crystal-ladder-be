@@ -10,7 +10,7 @@ export enum MessageType {
 
 @Entity('messages')
 export class Message extends Model {
-  @Column({ type: 'varchar', length: 200 })
+  @Column({ type: 'varchar', length: 200, nullable: true })
   subject: string;
 
   @Column({ type: 'text' })
@@ -34,6 +34,12 @@ export class Message extends Model {
 
   @Column({ type: 'json', nullable: true, comment: 'Attachment URLs array' })
   attachments: string[];
+
+  @Column({ name: 'read_at', type: 'timestamp', nullable: true })
+  readAt: Date;
+
+  @Column({ name: 'is_typing', type: 'boolean', default: false })
+  isTyping: boolean;
 
   @ManyToOne(() => User, (user) => user.sentMessages)
   @JoinColumn({ name: 'sender_id' })
